@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="pol_good">#64DD17</color>
+    <color name="pol_medium">#FBC02D</color>
+    <color name="pol_bad">#FA744A</color>
+    <color name="pol_very_bad">#C62828</color>
+</resources>

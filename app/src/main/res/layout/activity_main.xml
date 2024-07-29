@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:background="@color/cardview_shadow_start_color"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/location_msg"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="30dp"
+        android:layout_marginEnd="30dp"
+        android:text="Current Location: " />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/pollution_window"
+        android:layout_width="match_parent"
+        android:layout_height="150dp"
+        android:layout_below="@id/location_msg"
+        android:layout_marginHorizontal="40dp"
+        android:layout_marginTop="30dp"
+        android:textColor="@color/black"
+        android:background="@android:color/holo_blue_light"
+        android:gravity="center"
+        android:text="Pollution Level"
+        android:textStyle="bold" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/start_BTN"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:backgroundTint="@android:color/holo_blue_light"
+        android:text="Start Sampeling" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/stop_BTN"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/start_BTN"
+        android:layout_centerHorizontal="true"
+        android:backgroundTint="@android:color/holo_blue_light"
+        android:text="Stop Sampeling" />
+
+</RelativeLayout>
