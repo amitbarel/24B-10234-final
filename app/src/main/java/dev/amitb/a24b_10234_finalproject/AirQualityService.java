@@ -1,7 +1,6 @@
 package dev.amitb.a24b_10234_finalproject;
 
 import android.Manifest;
-import android.app.ActivityManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -11,10 +10,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ServiceInfo;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.drawable.Icon;
-import android.location.Location;
 import android.os.Build;
 import android.os.IBinder;
 import android.os.Looper;
@@ -34,8 +31,6 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.Priority;
 import com.google.android.gms.tasks.Task;
 import com.google.gson.Gson;
-
-import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -90,55 +85,51 @@ public class AirQualityService extends Service {
         return START_STICKY;
     }
 
-    private LocationListener locationCallback = new LocationListener() {
-        @Override
-        public void onLocationChanged(Location location) {
-            double lat = location.getLatitude();
-            double lon = location.getLongitude();
+    private LocationListener locationCallback = location -> {
+        double lat = location.getLatitude();
+        double lon = location.getLongitude();
 
-            AirQualityServiceCalls calls = RetrofitClient.getClient(BASE_URL).create(AirQualityServiceCalls.class);
-            Call<AirQualityResponse> call = calls.getAirQuality(lat, lon, API_KEY);
+        AirQualityServiceCalls calls = RetrofitClient.getClient(BASE_URL).create(AirQualityServiceCalls.class);
+        Call<AirQualityResponse> call = calls.getAirQuality(lat, lon, API_KEY);
 
-            call.enqueue(new Callback<AirQualityResponse>() {
-                @Override
-                public void onResponse(Call<AirQualityResponse> call, Response<AirQualityResponse> response) {
-                    AirQualityResponse airQualityResponse = response.body();
-                    if (airQualityResponse.getList() != null) {
-                        AirQualityResponse.Data data = airQualityResponse.getList().get(0);
-                        if (data != null) {
-                            locationAQI = data.getMain().getAqi();
-                            updateNotification(locationAQI);
-                            MyLoc myLoc = new MyLoc().setLat(lat).setLon(lon).setAqi(locationAQI);
-                            String json = new Gson().toJson(myLoc);
-                            Intent intent = new Intent(BROADCAST_LOCATION);
-                            intent.putExtra(BROADCAST_LOCATION_KEY, json);
-                            LocalBroadcastManager.getInstance(AirQualityService.this).sendBroadcast(intent);
-                        } else {
-                            Log.e("AirQualityService", "Null or empty data returned");
-                        }
+        call.enqueue(new Callback<AirQualityResponse>() {
+            @Override
+            public void onResponse(Call<AirQualityResponse> call, Response<AirQualityResponse> response) {
+                AirQualityResponse airQualityResponse = response.body();
+                if (airQualityResponse.getList() != null) {
+                    AirQualityResponse.Data data = airQualityResponse.getList().get(0);
+                    if (data != null) {
+                        locationAQI = data.getMain().getAqi();
+                        updateNotification(locationAQI);
+                        MyLoc myLoc = new MyLoc().setLat(lat).setLon(lon).setAqi(locationAQI);
+                        String json = new Gson().toJson(myLoc);
+                        Intent intent = new Intent(BROADCAST_LOCATION);
+                        intent.putExtra(BROADCAST_LOCATION_KEY, json);
+                        LocalBroadcastManager.getInstance(AirQualityService.this).sendBroadcast(intent);
                     } else {
-                        Log.e("AirQualityService", "Empty data returned");
+                        Log.e("AirQualityService", "Null or empty data returned");
                     }
+                } else {
+                    Log.e("AirQualityService", "Empty data returned");
                 }
+            }
 
-                @Override
-                public void onFailure(Call<AirQualityResponse> call, Throwable t) {
-                    Log.e("AirQualityService", "Error: " + t.getMessage());
-                }
-            });
-        }
+            @Override
+            public void onFailure(Call<AirQualityResponse> call, Throwable t) {
+                Log.e("AirQualityService", "Error: " + t.getMessage());
+            }
+        });
     };
 
     private void startSample() {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            LocationRequest locationRequest = new LocationRequest.Builder(1000)
+            LocationRequest locationRequest = new LocationRequest.Builder(5000)
                     .setPriority(Priority.PRIORITY_HIGH_ACCURACY)
+                    .setMinUpdateIntervalMillis(5000)
                     .setMinUpdateDistanceMeters(1.0f)
-                    .setMinUpdateIntervalMillis(1000)
                     .build();
 
-            // new Google API SDK v11 uses getFusedLocationProviderClient(this)
             fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.myLooper());
         }
     }
@@ -152,10 +143,10 @@ public class AirQualityService extends Service {
             Task<Void> task = fusedLocationClient.removeLocationUpdates(locationCallback);
             task.addOnCompleteListener(task1 -> {
                 if (task1.isSuccessful()) {
-                    Log.d("pttt", "stop Location Callback removed.");
+                    Log.d("AQI sensor stop", "stop LocationCallback removed.");
                     stopSelf();
                 } else {
-                    Log.d("pttt", "stop Failed to remove Location Callback.");
+                    Log.d("AQI sensor stop", "stop Failed to remove Location Callback.");
                 }
             });
         }
@@ -165,17 +156,6 @@ public class AirQualityService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         return null;
-    }
-
-    public static boolean isMyServiceRunning(Context context) {
-        ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-        List<ActivityManager.RunningServiceInfo> runs = manager.getRunningServices(Integer.MAX_VALUE);
-        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-            if (AirQualityService.class.getName().equals(service.service.getClassName())) {
-                return true;
-            }
-        }
-        return false;
     }
 
     // // // // // // // // // // // // // // // // Notifications  // // // // // // // // // // // // // // //
