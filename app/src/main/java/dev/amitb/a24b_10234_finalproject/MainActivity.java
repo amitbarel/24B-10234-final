@@ -1,18 +1,19 @@
 package dev.amitb.a24b_10234_finalproject;
 
 import android.Manifest;
+import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
-import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textview.MaterialTextView;
 import com.google.gson.Gson;
@@ -21,9 +22,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int REQUEST_LOCATION_PERMISSION = 10001;
 
-    private FusedLocationProviderClient fusedLocationClient;
-
-    private MaterialTextView location_msg;
+    private MaterialTextView lat_msg, lon_msg, aqi_msg;
     private MaterialTextView pollution_window;
     private MaterialButton start_BTN, stop_BTN;
 
@@ -43,7 +42,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void findViews() {
-        location_msg = findViewById(R.id.location_msg);
+        lat_msg = findViewById(R.id.lat_msg);
+        lon_msg = findViewById(R.id.lon_msg);
+        aqi_msg = findViewById(R.id.aqi_msg);
         pollution_window = findViewById(R.id.pollution_window);
         start_BTN = findViewById(R.id.start_BTN);
         stop_BTN = findViewById(R.id.stop_BTN);
@@ -57,19 +58,21 @@ public class MainActivity extends AppCompatActivity {
                 int color;
                 String txt;
                 MyLoc myLoc = new Gson().fromJson(json, MyLoc.class);
-                location_msg.setText("Location: " + myLoc.getLat() + " " + myLoc.getLon());
                 int index = myLoc.getAqi();
+                lat_msg.setText("Latitude: " + myLoc.getLat());
+                lon_msg.setText("Longitude: " + myLoc.getLon());
+                aqi_msg.setText("AQ Index: " + myLoc.getAqi());
                 if (index <= 50) {
                     txt = "Good!";
                     color = R.color.pol_good;
                 } else if (index <= 100) {
-                    txt = "Fair";
+                    txt = "Moderate";
                     color = R.color.pol_medium;
                 } else if (index <= 200) {
-                    txt = "Poor";
+                    txt = "Unhealthy";
                     color = R.color.pol_bad;
                 } else {
-                    txt = "Very Poor";
+                    txt = "Very Unhealthy or Hazardous";
                     color = R.color.pol_very_bad;
                 }
                 pollution_window.setBackgroundColor(ContextCompat.getColor(MainActivity.this, color));
@@ -81,18 +84,35 @@ public class MainActivity extends AppCompatActivity {
     };
 
     private boolean checkPermissions() {
-        return ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED &&
+        boolean locationPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED &&
                 ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+        boolean notificationPermission = true;
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            notificationPermission = notificationManager.areNotificationsEnabled();
+        }
+
+        return locationPermission && notificationPermission;
     }
 
     private void requestPermissions() {
-        ActivityCompat.requestPermissions(this,
-                new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
-                REQUEST_LOCATION_PERMISSION);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.POST_NOTIFICATIONS},
+                    REQUEST_LOCATION_PERMISSION);
+        } else {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
+                    REQUEST_LOCATION_PERMISSION);
+        }
     }
 
     private void startService() {
-        sendActionToService(AirQualityService.START_FOREGROUND_SERVICE);
+        if (checkPermissions())
+            sendActionToService(AirQualityService.START_FOREGROUND_SERVICE);
+        else
+            requestPermissions();
     }
 
     private void stopService() {

@@ -7,20 +7,41 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <com.google.android.material.textview.MaterialTextView
-        android:id="@+id/location_msg"
+    <LinearLayout
+        android:id="@+id/location_window"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"
+        android:orientation="vertical"
         android:layout_marginTop="30dp"
-        android:layout_marginEnd="30dp"
-        android:text="Current Location: " />
+        android:layout_marginEnd="30dp">
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/lat_msg"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Latitude:"/>
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/lon_msg"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Longitude:"/>
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/aqi_msg"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="AQ Index:"/>
+
+    </LinearLayout>
+
 
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/pollution_window"
         android:layout_width="match_parent"
         android:layout_height="150dp"
-        android:layout_below="@id/location_msg"
+        android:layout_below="@id/location_window"
         android:layout_marginHorizontal="40dp"
         android:layout_marginTop="30dp"
         android:textColor="@color/black"
