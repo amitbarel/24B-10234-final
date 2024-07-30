@@ -38,19 +38,23 @@ import retrofit2.Response;
 
 public class AirQualityService extends Service {
 
+    // Actions -> Foreground service
     public static final String START_FOREGROUND_SERVICE = "START_FOREGROUND_SERVICE";
     public static final String STOP_FOREGROUND_SERVICE = "STOP_FOREGROUND_SERVICE";
 
+    // Broadcast intents
     public static final String BROADCAST_LOCATION = "BROADCAST_LOCATION";
     public static final String BROADCAST_LOCATION_KEY = "BROADCAST_LOCATION_KEY";
 
-    public static int NOTIFICATION_ID = 168;
+    // Notification constants
+    public static final int NOTIFICATION_ID = 168;
     private int lastShownNotificationId = -1;
-    public static String CHANNEL_ID = "dev.amitb.a24b_10234_finalproject.CHANNEL_ID_FOREGROUND";
-    public static String MAIN_ACTION = "dev.amitb.a24b_10234_finalproject.AirQualityService.action.main";
+    public static final String CHANNEL_ID = "dev.amitb.a24b_10234_finalproject.CHANNEL_ID_FOREGROUND";
+    public static final String MAIN_ACTION = "dev.amitb.a24b_10234_finalproject.AirQualityService.action.main";
 
-    public static String BASE_URL = "https://api.openweathermap.org/data/2.5/";
-    public static String API_KEY = "e206f6a4b43cfb927c81f09fd9bc3dce";
+    // API details
+    public static final String BASE_URL = "https://api.openweathermap.org/data/2.5/";
+    public static final String API_KEY = "e206f6a4b43cfb927c81f09fd9bc3dce";
 
     public NotificationCompat.Builder notificationBuilder;
     private boolean isServiceRunning = false;
@@ -63,6 +67,7 @@ public class AirQualityService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        // Handle service start and stop actions
         if (intent == null || intent.getAction() == null) {
             stopForeground(true);
             return START_NOT_STICKY;
@@ -85,10 +90,12 @@ public class AirQualityService extends Service {
         return START_STICKY;
     }
 
+    // Location listener callback to process location updates
     private LocationListener locationCallback = location -> {
         double lat = location.getLatitude();
         double lon = location.getLongitude();
 
+        // Make API call to get air quality data
         AirQualityServiceCalls calls = RetrofitClient.getClient(BASE_URL).create(AirQualityServiceCalls.class);
         Call<AirQualityResponse> call = calls.getAirQuality(lat, lon, API_KEY);
 
@@ -121,6 +128,7 @@ public class AirQualityService extends Service {
         });
     };
 
+    // Start location sampling
     private void startSample() {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
@@ -134,6 +142,7 @@ public class AirQualityService extends Service {
         }
     }
 
+    // Stop location sampling
     private void stopSample() {
         powerManager = (PowerManager) getSystemService(POWER_SERVICE);
         wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "PassiveApp:tag");
@@ -158,10 +167,8 @@ public class AirQualityService extends Service {
         return null;
     }
 
-    // // // // // // // // // // // // // // // // Notifications  // // // // // // // // // // // // // // //
-
+    // Create and show the foreground notification
     private void notifyToUserForForegroundService() {
-        // On notification click
         Intent notificationIntent = new Intent(this, MainActivity.class);
         notificationIntent.setAction(MAIN_ACTION);
         notificationIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
@@ -192,6 +199,7 @@ public class AirQualityService extends Service {
         lastShownNotificationId = NOTIFICATION_ID;
     }
 
+    // Helper method to create notification builder
     public static NotificationCompat.Builder getNotificationBuilder(Context context, String channelId, int importance) {
         NotificationCompat.Builder builder;
         prepareChannel(context, channelId, importance);
@@ -199,6 +207,7 @@ public class AirQualityService extends Service {
         return builder;
     }
 
+    // Prepare notification channel for Android O and above
     private static void prepareChannel(Context context, String id, int importance) {
         final String appName = context.getString(R.string.app_name);
         String notifications_channel_description = "Air Quality app location channel";
@@ -220,6 +229,7 @@ public class AirQualityService extends Service {
         }
     }
 
+    // Update notification based on air quality index
     private void updateNotification(int index) {
         Icon image = null;
         if (index <= 50) {
