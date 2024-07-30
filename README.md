@@ -36,5 +36,8 @@ The foreground service (`AirQualityService`) performs the following tasks:
   - **Unhealthy**: Orange
   - **Very Unhealthy or Hazardous**: Red
 
+## Demo
+https://github.com/user-attachments/assets/eee17020-d021-4ca3-9192-d3c3c0f647f9
+
 ## Contributing
 Amit Barel - 318431277
